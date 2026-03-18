@@ -314,16 +314,7 @@ function getCategoryIcon($category) {
                 </div>
                 <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
                 
-                <!-- ASK QUESTION BUTTON - ADD THIS RIGHT HERE -->
-                <div class="review-actions" style="margin-top: 10px;">
-                    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
-                    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-                            class="ask-btn" 
-                            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                        💬 Ask Question
-                    </button>
-                    <?php endif; ?>
-                </div>
+    
                 <!-- ASK QUESTION BUTTON AND REPLY BUTTON -->
 <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
     <?php if($review['user_id'] != $_SESSION['user_id']): ?>
