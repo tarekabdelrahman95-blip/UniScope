@@ -75,11 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['message'])) {
 
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>Conversation with <?php echo htmlspecialchars($conv['other_user']); ?> - UniScope</title>
-    
-   <style>
+     <style>
         .chat-container {
             max-width: 800px;
             margin: 30px auto;
@@ -197,6 +193,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['message'])) {
             text-decoration: none;
         }
     </style>
+<head>
+    <meta charset="UTF-8">
+    <title>Conversation with <?php echo htmlspecialchars($conv['other_user']); ?> - UniScope</title>
+    
+  
 </head>
 <body>
     <div class="navbar">
