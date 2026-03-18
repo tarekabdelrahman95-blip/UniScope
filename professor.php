@@ -198,30 +198,41 @@ if ($user_review_check->get_result()->num_rows > 0) {
             <?php endif; ?>
             
             <div style="margin-top: 30px;">
-                <?php if($reviews->num_rows > 0): ?>
-                    <?php while($review = $reviews->fetch_assoc()): ?>
-                        <div class="review">
-                            <div class="review-header">
-                                <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
-                                <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
-                            </div>
-                            <div class="review-rating">
-                                <?php 
-                                for($i = 1; $i <= 5; $i++) {
-                                    if($i <= $review['rating']) echo "★";
-                                    else echo "☆";
-                                }
-                                ?>
-                            </div>
-                            <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <p>No reviews yet. Be the first to review this professor!</p>
-                    </div>
-                <?php endif; ?>
+    <?php if($reviews->num_rows > 0): ?>
+        <?php while($review = $reviews->fetch_assoc()): ?>
+            <div class="review">
+                <div class="review-header">
+                    <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
+                    <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
+                </div>
+                <div class="review-rating">
+                    <?php 
+                    for($i = 1; $i <= 5; $i++) {
+                        if($i <= $review['rating']) echo "★";
+                        else echo "☆";
+                    }
+                    ?>
+                </div>
+                <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
+                
+                <!-- ASK QUESTION BUTTON - ADD THIS RIGHT HERE -->
+                <div class="review-actions" style="margin-top: 10px;">
+                    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
+                    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'professor', <?php echo $review['user_id']; ?>)" 
+                            class="ask-btn" 
+                            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+                        💬 Ask Question
+                    </button>
+                    <?php endif; ?>
+                </div>
             </div>
+        <?php endwhile; ?>
+    <?php else: ?>
+        <div class="empty-state">
+            <p>No reviews yet. Be the first to review this professor!</p>
+        </div>
+    <?php endif; ?>
+</div>
         </div>
     </div>
 </body>
