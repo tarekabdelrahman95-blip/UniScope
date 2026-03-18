@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'config-live.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
