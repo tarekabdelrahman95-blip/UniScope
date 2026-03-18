@@ -341,57 +341,89 @@ if (!empty($college['gallery_images'])) {
                 </div>
             <?php endif; ?>
             
-            <div style="margin-top: 30px;">
-                <?php if($reviews->num_rows > 0): ?>
-                    <?php while($review = $reviews->fetch_assoc()): ?>
-                        <div class="review">
-                            <div class="review-header">
-                                <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
-                                <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
-                            </div>
-                            <div class="review-rating">
-                                <?php 
-                                for($i = 1; $i <= 5; $i++) {
-                                    if($i <= $review['rating']) echo "★";
-                                    else echo "☆";
-                                }
-                                ?>
-                            </div>
-                            <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
-                            
-                            <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
-                                <?php if($review['user_id'] != $_SESSION['user_id']): ?>
-                                <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-                                        class="ask-btn" 
-                                        style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                    💬 Ask Question
-                                </button>
-                                <?php endif; ?>
-                            </div>
-                            <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
-    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
-    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-            class="ask-btn" 
-            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-        💬 Ask Question
-    </button>
-    <?php endif; ?>
-    
-    <!-- ADD THIS REPLY BUTTON -->
-    <button onclick="openReplyModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-            class="reply-btn" 
-            style="background: none; border: 1px solid #28a745; color: #28a745; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-        ↩️ Reply
-    </button>
-</div>
+         <div style="margin-top: 30px;">
+    <?php if($reviews->num_rows > 0): ?>
+        <?php while($review = $reviews->fetch_assoc()): 
+            // Get replies for this review
+            $replies_sql = "SELECT rr.*, u.username 
+                           FROM review_replies rr 
+                           JOIN users u ON rr.user_id = u.user_id 
+                           WHERE rr.review_id = ? AND rr.review_type = 'college' 
+                           ORDER BY rr.created_at ASC";
+            $replies_stmt = $conn->prepare($replies_sql);
+            $replies_stmt->bind_param("i", $review['rating_id']);
+            $replies_stmt->execute();
+            $replies = $replies_stmt->get_result();
+        ?>
+            <div class="review" id="review-<?php echo $review['rating_id']; ?>">
+                <div class="review-header">
+                    <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
+                    <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
+                </div>
+                <div class="review-rating">
+                    <?php 
+                    for($i = 1; $i <= 5; $i++) {
+                        if($i <= $review['rating']) echo "★";
+                        else echo "☆";
+                    }
+                    ?>
+                </div>
+                <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
+                
+                <!-- Action Buttons -->
+                <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
+                    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
+                    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+                            class="ask-btn" 
+                            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+                        💬 Ask Question
+                    </button>
+                    <?php endif; ?>
+                    
+                    <!-- Reply Button (shows for everyone) -->
+                    <button onclick="showReplyForm(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+                            class="reply-btn" 
+                            style="background: none; border: 1px solid #28a745; color: #28a745; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+                        ↩️ Reply
+                    </button>
+                </div>
+                
+                <!-- Reply Form (hidden by default) -->
+                <div id="reply-form-<?php echo $review['rating_id']; ?>" class="reply-form" style="display: none; margin-top: 15px; margin-left: 30px;">
+                    <form onsubmit="submitReply(event, <?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)">
+                        <textarea id="reply-text-<?php echo $review['rating_id']; ?>" rows="2" 
+                                  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;"
+                                  placeholder="Write your reply..." required></textarea>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn" style="background: #28a745; padding: 8px 20px;">Post Reply</button>
+                            <button type="button" onclick="hideReplyForm(<?php echo $review['rating_id']; ?>)" 
+                                    class="btn" style="background: #6c757d; padding: 8px 20px;">Cancel</button>
                         </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <p>No reviews yet. Be the first to review!</p>
-                    </div>
-                <?php endif; ?>
+                    </form>
+                </div>
+                
+                <!-- Display Replies -->
+                <div class="replies-section" style="margin-top: 15px; margin-left: 30px;">
+                    <?php if($replies->num_rows > 0): ?>
+                        <?php while($reply = $replies->fetch_assoc()): ?>
+                            <div class="reply" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #28a745;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span style="font-weight: bold; color: #28a745;">↪️ <?php echo htmlspecialchars($reply['username']); ?></span>
+                                    <span style="color: #999; font-size: 12px;"><?php echo date('M d, Y', strtotime($reply['created_at'])); ?></span>
+                                </div>
+                                <p style="color: #555;"><?php echo nl2br(htmlspecialchars($reply['reply_text'])); ?></p>
+                            </div>
+                        <?php endwhile; ?>
+                    <?php endif; ?>
+                </div>
             </div>
+        <?php endwhile; ?>
+    <?php else: ?>
+        <div class="empty-state">
+            <p>No reviews yet. Be the first to review!</p>
+        </div>
+    <?php endif; ?>
+</div>
         </div>
     </div>
 
