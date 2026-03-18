@@ -144,8 +144,7 @@ if (!empty($college['gallery_images'])) {
 <body>
     <div class="navbar">
         <h1><a href="index.php">
-            <img src="assets/images/UniScope.png.png" alt="UniScope" class="navbar-logo">
-            UniScope
+            <img src="assets/images/logo.png" alt="UniScope" class="navbar-logo" style="height: 40px; width: auto;"> UniScope
         </a></h1>
         <div class="user-menu">
             <span class="username">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
@@ -388,5 +387,75 @@ if (!empty($college['gallery_images'])) {
     <script>
     // Your existing JavaScript here
     </script>
+    <!-- Message Modal -->
+<div id="messageModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background: white; max-width: 500px; margin: 100px auto; padding: 30px; border-radius: 10px; position: relative;">
+        <span onclick="closeMessageModal()" style="position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer;">&times;</span>
+        <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
+        
+        <form id="messageForm" onsubmit="sendMessage(event)">
+            <input type="hidden" id="receiverId" name="receiver_id">
+            <input type="hidden" id="reviewId" name="review_id">
+            <input type="hidden" id="reviewType" name="review_type">
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
+                <textarea id="messageText" name="message" rows="4" required 
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                          placeholder="Type your question here..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
+                <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openMessageModal(reviewId, reviewType, receiverId) {
+    document.getElementById('receiverId').value = receiverId;
+    document.getElementById('reviewId').value = reviewId;
+    document.getElementById('reviewType').value = reviewType;
+    document.getElementById('messageModal').style.display = 'block';
+}
+
+function closeMessageModal() {
+    document.getElementById('messageModal').style.display = 'none';
+    document.getElementById('messageForm').reset();
+}
+
+function sendMessage(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(document.getElementById('messageForm'));
+    
+    fetch('send_message.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Message sent successfully!');
+            closeMessageModal();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending message. Please try again.');
+    });
+}
+
+// Close modal if user clicks outside
+window.onclick = function(event) {
+    const modal = document.getElementById('messageModal');
+    if (event.target == modal) {
+        closeMessageModal();
+    }
+}
+</script>
 </body>
 </html>
