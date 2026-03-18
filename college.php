@@ -324,6 +324,23 @@ function getCategoryIcon($category) {
                     </button>
                     <?php endif; ?>
                 </div>
+                <!-- ASK QUESTION BUTTON AND REPLY BUTTON -->
+<div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
+    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
+    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+            class="ask-btn" 
+            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+        💬 Ask Question
+    </button>
+    <?php endif; ?>
+    
+    <!-- NEW REPLY BUTTON - Shows for EVERYONE -->
+    <button onclick="openReplyModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+            class="reply-btn" 
+            style="background: none; border: 1px solid #28a745; color: #28a745; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+        ↩️ Reply
+    </button>
+</div>
             </div>
         <?php endwhile; ?>
     <?php else: ?>
