@@ -71,6 +71,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['message'])) {
         exit();
     }
 }
+// First, get all messages
+$messages = $msg_stmt->get_result();
+
+// Separate parent messages and replies
+$parent_messages = [];
+$replies = [];
+
+while($msg = $messages->fetch_assoc()) {
+    if ($msg['parent_message_id']) {
+        $replies[$msg['parent_message_id']][] = $msg;
+    } else {
+        $parent_messages[] = $msg;
+    }
+}
+
+// Display parent messages with their replies
+foreach($parent_messages as $parent) {
+    // Display parent message
+    echo '<div class="message ' . ($parent['sender_id'] == $user_id ? 'sent' : 'received') . '">';
+    echo '<div class="message-bubble">' . htmlspecialchars($parent['message_text']) . '</div>';
+    echo '<div class="message-info">' . date('M d, H:i', strtotime($parent['created_at']));
+    
+    // Add Reply button
+    echo ' <button onclick="openReplyToMessage(' . $parent['message_id'] . ')" 
+                 style="background:none; border:none; color:#28a745; cursor:pointer; margin-left:10px;">
+                 ↩️ Reply</button>';
+    echo '</div>';
+    echo '</div>';
+    
+    // Display replies to this message
+    if (isset($replies[$parent['message_id']])) {
+        foreach($replies[$parent['message_id']] as $reply) {
+            echo '<div class="message ' . ($reply['sender_id'] == $user_id ? 'sent' : 'received') . '" 
+                       style="margin-left: 30px; border-left: 2px solid #ddd; padding-left: 10px;">';
+            echo '<div class="message-bubble" style="background: #f0f2f5; color: #333;">↪️ ' . 
+                 htmlspecialchars($reply['message_text']) . '</div>';
+            echo '<div class="message-info">' . date('M d, H:i', strtotime($reply['created_at'])) . '</div>';
+            echo '</div>';
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
