@@ -473,5 +473,206 @@ window.onclick = function(event) {
     }
 }
 </script>
+<!-- Message Modal (Ask Question) -->
+<div id="messageModal" class="modal">
+    <div class="modal-content slide-up">
+        <span onclick="closeMessageModal()" class="close">&times;</span>
+        <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
+        
+        <form id="messageForm" onsubmit="sendMessage(event)">
+            <input type="hidden" id="receiverId" name="receiver_id">
+            <input type="hidden" id="reviewId" name="review_id">
+            <input type="hidden" id="reviewType" name="review_type">
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
+                <textarea id="messageText" name="message" rows="4" required 
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                          placeholder="Type your question here..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
+                <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reply Modal -->
+<div id="replyModal" class="modal">
+    <div class="modal-content slide-up">
+        <span onclick="closeReplyModal()" class="close">&times;</span>
+        <h3 style="margin-bottom: 20px; color: #28a745;">Reply to Comment</h3>
+        
+        <form id="replyForm" onsubmit="sendReply(event)">
+            <input type="hidden" id="replyReceiverId" name="receiver_id">
+            <input type="hidden" id="replyReviewId" name="review_id">
+            <input type="hidden" id="replyReviewType" name="review_type">
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Reply:</label>
+                <textarea id="replyText" name="message" rows="4" required 
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                          placeholder="Type your reply here..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn" style="background: #28a745; flex: 1;">Send Reply</button>
+                <button type="button" onclick="closeReplyModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background: white;
+    max-width: 500px;
+    margin: 100px auto;
+    padding: 30px;
+    border-radius: 10px;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* Slide Up Animation */
+.slide-up {
+    animation: slideUp 0.4s ease-out;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close:hover {
+    color: #333;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+</style>
+
+<script>
+// Message Modal Functions
+function openMessageModal(reviewId, reviewType, receiverId) {
+    document.getElementById('receiverId').value = receiverId;
+    document.getElementById('reviewId').value = reviewId;
+    document.getElementById('reviewType').value = reviewType;
+    document.getElementById('messageModal').style.display = 'block';
+}
+
+function closeMessageModal() {
+    document.getElementById('messageModal').style.display = 'none';
+    document.getElementById('messageForm').reset();
+}
+
+// Reply Modal Functions
+function openReplyModal(reviewId, reviewType, receiverId) {
+    document.getElementById('replyReceiverId').value = receiverId;
+    document.getElementById('replyReviewId').value = reviewId;
+    document.getElementById('replyReviewType').value = reviewType;
+    document.getElementById('replyModal').style.display = 'block';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyForm').reset();
+}
+
+// Send Message Function
+function sendMessage(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(document.getElementById('messageForm'));
+    
+    fetch('send_message.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Message sent successfully!');
+            closeMessageModal();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending message. Please try again.');
+    });
+}
+
+// Send Reply Function
+function sendReply(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(document.getElementById('replyForm'));
+    
+    fetch('send_message.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Reply sent successfully!');
+            closeReplyModal();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending reply. Please try again.');
+    });
+}
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const messageModal = document.getElementById('messageModal');
+    const replyModal = document.getElementById('replyModal');
+    
+    if (event.target == messageModal) {
+        closeMessageModal();
+    }
+    if (event.target == replyModal) {
+        closeReplyModal();
+    }
+}
+</script>
 </body>
 </html>
