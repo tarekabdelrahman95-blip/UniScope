@@ -50,7 +50,7 @@ function getCollegeLogo($college_name) {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Home - College Rating System</title>
+   <title><?php echo htmlspecialchars($college['college_name']); ?> - UniScope</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
