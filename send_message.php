@@ -87,4 +87,18 @@ try {
     $conn->rollback();
     echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
 }
+// Check if this is a reply to a specific message
+$parent_message_id = isset($_POST['parent_message_id']) ? $_POST['parent_message_id'] : null;
+
+// In the INSERT section:
+if ($parent_message_id) {
+    $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text, parent_message_id, is_reply) 
+                VALUES (?, ?, ?, ?, TRUE)";
+    $msg_stmt = $conn->prepare($msg_sql);
+    $msg_stmt->bind_param("iisi", $conversation_id, $sender_id, $message_text, $parent_message_id);
+} else {
+    $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text) VALUES (?, ?, ?)";
+    $msg_stmt = $conn->prepare($msg_sql);
+    $msg_stmt->bind_param("iis", $conversation_id, $sender_id, $message_text);
+}
 ?>
