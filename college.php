@@ -144,7 +144,7 @@ if (!empty($college['gallery_images'])) {
 <body>
     <div class="navbar">
         <h1><a href="index.php">
-            <img src="assets/images/uploads/UniScope.png.png" alt="UniScope" class="navbar-logo">
+            <img src="assets/images/UniScope.png.png" alt="UniScope" class="navbar-logo">
             UniScope
         </a></h1>
         <div class="user-menu">
