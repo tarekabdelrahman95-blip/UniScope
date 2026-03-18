@@ -6,7 +6,7 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-// Get all colleges for dropdown
+// Get all colleges for dropdowndfkmdf 
 $colleges = $conn->query("SELECT college_id, college_name FROM colleges ORDER BY college_name");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         .sidebar {
             width: 250px;
-            background: #2c3e50;
+            background: black;
             color: white;
             height: 100vh;
             position: fixed;
