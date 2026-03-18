@@ -34,7 +34,7 @@ $stmt->bind_param("i", $college_id);
 $stmt->execute();
 $professors = $stmt->get_result();
 
-// Get majors (these are your programs like Commerce, BIS, etc.)
+// Get majors
 $major_sql = "SELECT * FROM majors WHERE college_id = ? ORDER BY category, major_name";
 $stmt = $conn->prepare($major_sql);
 $stmt->bind_param("i", $college_id);
@@ -57,7 +57,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['rating'])) {
     $review = trim($_POST['review']);
     $user_id = $_SESSION['user_id'];
     
-    // Check if user already rated
     $check_sql = "SELECT * FROM college_ratings WHERE user_id = ? AND college_id = ?";
     $check = $conn->prepare($check_sql);
     $check->bind_param("ii", $user_id, $college_id);
@@ -65,13 +64,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['rating'])) {
     $check_result = $check->get_result();
     
     if ($check_result->num_rows == 0) {
-        // Insert new rating
         $insert_sql = "INSERT INTO college_ratings (user_id, college_id, rating, review) VALUES (?, ?, ?, ?)";
         $insert = $conn->prepare($insert_sql);
         $insert->bind_param("iiis", $user_id, $college_id, $rating, $review);
         
         if ($insert->execute()) {
-            // Update college average rating
             $avg_sql = "UPDATE colleges SET 
                         avg_rating = (SELECT AVG(rating) FROM college_ratings WHERE college_id = ?),
                         total_ratings = (SELECT COUNT(*) FROM college_ratings WHERE college_id = ?)
@@ -88,7 +85,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['rating'])) {
     }
 }
 
-// Check if user has already reviewed
 $user_reviewed = false;
 $review_check = $conn->prepare("SELECT * FROM college_ratings WHERE user_id = ? AND college_id = ?");
 $review_check->bind_param("ii", $_SESSION['user_id'], $college_id);
@@ -111,7 +107,6 @@ if (!empty($college['gallery_images'])) {
     <title><?php echo htmlspecialchars($college['college_name']); ?> - UniScope</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>
-        /* Additional page-specific styles */
         .college-overview {
             line-height: 1.8;
             color: #555;
@@ -139,13 +134,91 @@ if (!empty($college['gallery_images'])) {
             background: #f8f9fa;
             border-radius: 8px;
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 30px;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #666;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideUpForm {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1><a href="index.php">
-          UniScope
-        </a></h1>
+        <h1><a href="index.php">UniScope</a></h1>
         <div class="user-menu">
             <span class="username">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
             <a href="logout.php" class="logout">Logout</a>
@@ -163,7 +236,7 @@ if (!empty($college['gallery_images'])) {
             <div class="error-message"><?php echo $error; ?></div>
         <?php endif; ?>
         
-        <!-- College Header with Image -->
+        <!-- College Header -->
         <div class="college-header">
             <?php if (!empty($college['college_image'])): ?>
             <div class="college-image-container">
@@ -192,13 +265,11 @@ if (!empty($college['gallery_images'])) {
                 <?php endif; ?>
             </div>
             
-            <!-- Overview Section -->
             <h3>Overview</h3>
             <p class="college-overview">
                 <?php echo !empty($college['overview']) ? nl2br(htmlspecialchars($college['overview'])) : 'No overview available yet.'; ?>
             </p>
             
-            <!-- Upload Overview (for admins only - you can add admin check later) -->
             <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin']): ?>
             <div class="gallery-upload-form">
                 <h4>Update Overview</h4>
@@ -227,7 +298,6 @@ if (!empty($college['gallery_images'])) {
             <p class="empty-state">No gallery images yet.</p>
             <?php endif; ?>
             
-            <!-- Upload Gallery Images (for admins) -->
             <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin']): ?>
             <div class="gallery-upload-form">
                 <h4>Add Gallery Images</h4>
@@ -240,9 +310,9 @@ if (!empty($college['gallery_images'])) {
             <?php endif; ?>
         </div>
         
-        <!-- Majors Section (Programs like Commerce, BIS) -->
+        <!-- Majors Section -->
         <div class="section">
-            <h2 class="section-title">📚 colleges</h2>
+            <h2 class="section-title">📚 Academic Programs</h2>
             
             <?php if($majors->num_rows > 0): ?>
                 <div class="grid" id="majorsGrid">
@@ -268,9 +338,7 @@ if (!empty($college['gallery_images'])) {
                             </p>
                             <div class="card-footer">
                                 <span class="duration">🕒 <?php echo $major['duration_years']; ?> years</span>
-                                <a href="major.php?id=<?php echo $major['major_id']; ?>" class="view-link">
-                                    View Program →
-                                </a>
+                                <a href="major.php?id=<?php echo $major['major_id']; ?>" class="view-link">View Program →</a>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -341,489 +409,239 @@ if (!empty($college['gallery_images'])) {
                 </div>
             <?php endif; ?>
             
-         <div style="margin-top: 30px;">
-    <?php if($reviews->num_rows > 0): ?>
-        <?php while($review = $reviews->fetch_assoc()): 
-            // Get replies for this review
-            $replies_sql = "SELECT rr.*, u.username 
-                           FROM review_replies rr 
-                           JOIN users u ON rr.user_id = u.user_id 
-                           WHERE rr.review_id = ? AND rr.review_type = 'college' 
-                           ORDER BY rr.created_at ASC";
-            $replies_stmt = $conn->prepare($replies_sql);
-            $replies_stmt->bind_param("i", $review['rating_id']);
-            $replies_stmt->execute();
-            $replies = $replies_stmt->get_result();
-        ?>
-            <div class="review" id="review-<?php echo $review['rating_id']; ?>">
-                <div class="review-header">
-                    <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
-                    <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
-                </div>
-                <div class="review-rating">
-                    <?php 
-                    for($i = 1; $i <= 5; $i++) {
-                        if($i <= $review['rating']) echo "★";
-                        else echo "☆";
-                    }
+            <div style="margin-top: 30px;">
+                <?php if($reviews->num_rows > 0): ?>
+                    <?php while($review = $reviews->fetch_assoc()): 
+                        $replies_sql = "SELECT rr.*, u.username 
+                                       FROM review_replies rr 
+                                       JOIN users u ON rr.user_id = u.user_id 
+                                       WHERE rr.review_id = ? AND rr.review_type = 'college' 
+                                       ORDER BY rr.created_at ASC";
+                        $replies_stmt = $conn->prepare($replies_sql);
+                        $replies_stmt->bind_param("i", $review['rating_id']);
+                        $replies_stmt->execute();
+                        $replies = $replies_stmt->get_result();
                     ?>
-                </div>
-                <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
-                
-                <!-- Action Buttons -->
-                <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
-                    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
-                    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-                            class="ask-btn" 
-                            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                        💬 Ask Question
-                    </button>
-                    <?php endif; ?>
-                    
-                    <!-- Reply Button (shows for everyone) -->
-                    <button onclick="showReplyForm(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-                            class="reply-btn" 
-                            style="background: none; border: 1px solid #28a745; color: #28a745; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                        ↩️ Reply
-                    </button>
-                </div>
-                
-                <!-- Reply Form (hidden by default) -->
-                <div id="reply-form-<?php echo $review['rating_id']; ?>" class="reply-form" style="display: none; margin-top: 15px; margin-left: 30px;">
-                    <form onsubmit="submitReply(event, <?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)">
-                        <textarea id="reply-text-<?php echo $review['rating_id']; ?>" rows="2" 
-                                  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;"
-                                  placeholder="Write your reply..." required></textarea>
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" class="btn" style="background: #28a745; padding: 8px 20px;">Post Reply</button>
-                            <button type="button" onclick="hideReplyForm(<?php echo $review['rating_id']; ?>)" 
-                                    class="btn" style="background: #6c757d; padding: 8px 20px;">Cancel</button>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Display Replies -->
-                <div class="replies-section" style="margin-top: 15px; margin-left: 30px;">
-                    <?php if($replies->num_rows > 0): ?>
-                        <?php while($reply = $replies->fetch_assoc()): ?>
-                            <div class="reply" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #28a745;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span style="font-weight: bold; color: #28a745;">↪️ <?php echo htmlspecialchars($reply['username']); ?></span>
-                                    <span style="color: #999; font-size: 12px;"><?php echo date('M d, Y', strtotime($reply['created_at'])); ?></span>
-                                </div>
-                                <p style="color: #555;"><?php echo nl2br(htmlspecialchars($reply['reply_text'])); ?></p>
+                        <div class="review" id="review-<?php echo $review['rating_id']; ?>">
+                            <div class="review-header">
+                                <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
+                                <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
                             </div>
-                        <?php endwhile; ?>
-                    <?php endif; ?>
-                </div>
+                            <div class="review-rating">
+                                <?php 
+                                for($i = 1; $i <= 5; $i++) {
+                                    if($i <= $review['rating']) echo "★";
+                                    else echo "☆";
+                                }
+                                ?>
+                            </div>
+                            <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
+                            
+                            <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
+                                <?php if($review['user_id'] != $_SESSION['user_id']): ?>
+                                <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+                                        class="ask-btn" 
+                                        style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+                                    💬 Ask Question
+                                </button>
+                                <?php endif; ?>
+                                
+                                <button onclick="showReplyForm(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+                                        class="reply-btn" 
+                                        style="background: none; border: 1px solid #28a745; color: #28a745; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+                                    ↩️ Reply
+                                </button>
+                            </div>
+                            
+                            <div id="reply-form-<?php echo $review['rating_id']; ?>" class="reply-form" style="display: none; margin-top: 15px; margin-left: 30px;">
+                                <form onsubmit="submitReply(event, <?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)">
+                                    <textarea id="reply-text-<?php echo $review['rating_id']; ?>" rows="2" 
+                                              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;"
+                                              placeholder="Write your reply..." required></textarea>
+                                    <div style="display: flex; gap: 10px;">
+                                        <button type="submit" class="btn" style="background: #28a745; padding: 8px 20px;">Post Reply</button>
+                                        <button type="button" onclick="hideReplyForm(<?php echo $review['rating_id']; ?>)" 
+                                                class="btn" style="background: #6c757d; padding: 8px 20px;">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="replies-section" style="margin-top: 15px; margin-left: 30px;">
+                                <?php if($replies->num_rows > 0): ?>
+                                    <?php while($reply = $replies->fetch_assoc()): ?>
+                                        <div class="reply" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #28a745;">
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                                <span style="font-weight: bold; color: #28a745;">↪️ <?php echo htmlspecialchars($reply['username']); ?></span>
+                                                <span style="color: #999; font-size: 12px;"><?php echo date('M d, Y', strtotime($reply['created_at'])); ?></span>
+                                            </div>
+                                            <p style="color: #555;"><?php echo nl2br(htmlspecialchars($reply['reply_text'])); ?></p>
+                                        </div>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="empty-state">
+                        <p>No reviews yet. Be the first to review!</p>
+                    </div>
+                <?php endif; ?>
             </div>
-        <?php endwhile; ?>
-    <?php else: ?>
-        <div class="empty-state">
-            <p>No reviews yet. Be the first to review!</p>
-        </div>
-    <?php endif; ?>
-</div>
         </div>
     </div>
 
-    <!-- Message Modal -->
-    <div id="messageModal" class="modal" style="display: none;">
-        <!-- Your existing modal code here -->
+    <!-- Message Modal (Ask Question) - SLIDE UP ANIMATION -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content slide-up">
+            <span onclick="closeMessageModal()" class="close">&times;</span>
+            <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
+            
+            <form id="messageForm" onsubmit="sendMessage(event)">
+                <input type="hidden" id="receiverId" name="receiver_id">
+                <input type="hidden" id="reviewId" name="review_id">
+                <input type="hidden" id="reviewType" name="review_type">
+                
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
+                    <textarea id="messageText" name="message" rows="4" required 
+                              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                              placeholder="Type your question here..."></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
+                    <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
-    // Your existing JavaScript here
+    // Message Modal Functions
+    function openMessageModal(reviewId, reviewType, receiverId) {
+        document.getElementById('receiverId').value = receiverId;
+        document.getElementById('reviewId').value = reviewId;
+        document.getElementById('reviewType').value = reviewType;
+        document.getElementById('messageModal').style.display = 'block';
+    }
+
+    function closeMessageModal() {
+        document.getElementById('messageModal').style.display = 'none';
+        document.getElementById('messageForm').reset();
+    }
+
+    // Send Message Function
+    function sendMessage(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(document.getElementById('messageForm'));
+        
+        fetch('send_message.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('Message sent successfully!');
+                closeMessageModal();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error sending message. Please try again.');
+        });
+    }
+
+    // Reply Form Functions
+    function showReplyForm(reviewId, reviewType, receiverId) {
+        document.querySelectorAll('.reply-form').forEach(form => {
+            form.style.display = 'none';
+        });
+        
+        const form = document.getElementById('reply-form-' + reviewId);
+        form.style.display = 'block';
+        form.style.animation = 'slideDown 0.3s ease-out';
+        form.dataset.receiverId = receiverId;
+        form.dataset.reviewType = reviewType;
+    }
+
+    function hideReplyForm(reviewId) {
+        const form = document.getElementById('reply-form-' + reviewId);
+        form.style.animation = 'slideUpForm 0.3s ease-out';
+        setTimeout(() => {
+            form.style.display = 'none';
+            form.style.animation = '';
+        }, 300);
+    }
+
+    function submitReply(event, reviewId, reviewType, receiverId) {
+        event.preventDefault();
+        
+        const replyText = document.getElementById('reply-text-' + reviewId).value;
+        
+        if (!replyText.trim()) {
+            alert('Please write a reply');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('review_id', reviewId);
+        formData.append('review_type', reviewType);
+        formData.append('receiver_id', receiverId);
+        formData.append('reply_text', replyText);
+        
+        fetch('submit_reply.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const repliesSection = document.querySelector('#review-' + reviewId + ' .replies-section');
+                const newReply = document.createElement('div');
+                newReply.className = 'reply';
+                newReply.style.marginBottom = '10px';
+                newReply.style.padding = '10px';
+                newReply.style.background = '#f8f9fa';
+                newReply.style.borderRadius = '8px';
+                newReply.style.borderLeft = '3px solid #28a745';
+                newReply.style.animation = 'fadeIn 0.5s';
+                
+                newReply.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: #28a745;">↪️ ${escapeHtml(data.username)}</span>
+                        <span style="color: #999; font-size: 12px;">Just now</span>
+                    </div>
+                    <p style="color: #555;">${escapeHtml(replyText)}</p>
+                `;
+                
+                repliesSection.appendChild(newReply);
+                hideReplyForm(reviewId);
+                document.getElementById('reply-text-' + reviewId).value = '';
+            } else {
+                alert('Error posting reply: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error posting reply. Please try again.');
+        });
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('messageModal');
+        if (event.target == modal) {
+            closeMessageModal();
+        }
+    }
     </script>
-    <!-- Message Modal -->
-<div id="messageModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-    <div class="modal-content" style="background: white; max-width: 500px; margin: 100px auto; padding: 30px; border-radius: 10px; position: relative;">
-        <span onclick="closeMessageModal()" style="position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer;">&times;</span>
-        <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
-        
-        <form id="messageForm" onsubmit="sendMessage(event)">
-            <input type="hidden" id="receiverId" name="receiver_id">
-            <input type="hidden" id="reviewId" name="review_id">
-            <input type="hidden" id="reviewType" name="review_type">
-            
-            <div class="form-group" style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
-                <textarea id="messageText" name="message" rows="4" required 
-                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
-                          placeholder="Type your question here..."></textarea>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
-                <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-function openMessageModal(reviewId, reviewType, receiverId) {
-    document.getElementById('receiverId').value = receiverId;
-    document.getElementById('reviewId').value = reviewId;
-    document.getElementById('reviewType').value = reviewType;
-    document.getElementById('messageModal').style.display = 'block';
-}
-
-function closeMessageModal() {
-    document.getElementById('messageModal').style.display = 'none';
-    document.getElementById('messageForm').reset();
-}
-
-function sendMessage(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(document.getElementById('messageForm'));
-    
-    fetch('send_message.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            alert('Message sent successfully!');
-            closeMessageModal();
-        } else {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        alert('Error sending message. Please try again.');
-    });
-}
-
-// Close modal if user clicks outside
-window.onclick = function(event) {
-    const modal = document.getElementById('messageModal');
-    if (event.target == modal) {
-        closeMessageModal();
-    }
-}
-</script>
-<!-- Message Modal (Ask Question) -->
-<div id="messageModal" class="modal">
-    <div class="modal-content slide-up">
-        <span onclick="closeMessageModal()" class="close">&times;</span>
-        <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
-        
-        <form id="messageForm" onsubmit="sendMessage(event)">
-            <input type="hidden" id="receiverId" name="receiver_id">
-            <input type="hidden" id="reviewId" name="review_id">
-            <input type="hidden" id="reviewType" name="review_type">
-            
-            <div class="form-group">
-                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
-                <textarea id="messageText" name="message" rows="4" required 
-                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
-                          placeholder="Type your question here..."></textarea>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
-                <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Reply Modal -->
-<div id="replyModal" class="modal">
-    <div class="modal-content slide-up">
-        <span onclick="closeReplyModal()" class="close">&times;</span>
-        <h3 style="margin-bottom: 20px; color: #28a745;">Reply to Comment</h3>
-        
-        <form id="replyForm" onsubmit="sendReply(event)">
-            <input type="hidden" id="replyReceiverId" name="receiver_id">
-            <input type="hidden" id="replyReviewId" name="review_id">
-            <input type="hidden" id="replyReviewType" name="review_type">
-            
-            <div class="form-group">
-                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Reply:</label>
-                <textarea id="replyText" name="message" rows="4" required 
-                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
-                          placeholder="Type your reply here..."></textarea>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button type="submit" class="btn" style="background: #28a745; flex: 1;">Send Reply</button>
-                <button type="button" onclick="closeReplyModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<style>
-/* Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    animation: fadeIn 0.3s;
-}
-
-.modal-content {
-    background: white;
-    max-width: 500px;
-    margin: 100px auto;
-    padding: 30px;
-    border-radius: 10px;
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-/* Slide Up Animation */
-.slide-up {
-    animation: slideUp 0.4s ease-out;
-}
-
-.close {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    color: #666;
-    cursor: pointer;
-    transition: color 0.3s;
-}
-
-.close:hover {
-    color: #333;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-</style>
-
-<script>
-// Message Modal Functions
-function openMessageModal(reviewId, reviewType, receiverId) {
-    document.getElementById('receiverId').value = receiverId;
-    document.getElementById('reviewId').value = reviewId;
-    document.getElementById('reviewType').value = reviewType;
-    document.getElementById('messageModal').style.display = 'block';
-}
-
-function closeMessageModal() {
-    document.getElementById('messageModal').style.display = 'none';
-    document.getElementById('messageForm').reset();
-}
-
-// Reply Modal Functions
-function openReplyModal(reviewId, reviewType, receiverId) {
-    document.getElementById('replyReceiverId').value = receiverId;
-    document.getElementById('replyReviewId').value = reviewId;
-    document.getElementById('replyReviewType').value = reviewType;
-    document.getElementById('replyModal').style.display = 'block';
-}
-
-function closeReplyModal() {
-    document.getElementById('replyModal').style.display = 'none';
-    document.getElementById('replyForm').reset();
-}
-
-// Send Message Function
-function sendMessage(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(document.getElementById('messageForm'));
-    
-    fetch('send_message.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            alert('Message sent successfully!');
-            closeMessageModal();
-        } else {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        alert('Error sending message. Please try again.');
-    });
-}
-
-// Send Reply Function
-function sendReply(event) {
-    event.preventDefault();
-    
-    const formData = new FormData(document.getElementById('replyForm'));
-    
-    fetch('send_message.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if(data.success) {
-            alert('Reply sent successfully!');
-            closeReplyModal();
-        } else {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        alert('Error sending reply. Please try again.');
-    });
-}
-
-// Close modals when clicking outside
-window.onclick = function(event) {
-    const messageModal = document.getElementById('messageModal');
-    const replyModal = document.getElementById('replyModal');
-    
-    if (event.target == messageModal) {
-        closeMessageModal();
-    }
-    if (event.target == replyModal) {
-        closeReplyModal();
-    }
-}
-// Show/Hide Reply Form
-function showReplyForm(reviewId, reviewType, receiverId) {
-    // Hide any other open reply forms
-    document.querySelectorAll('.reply-form').forEach(form => {
-        form.style.display = 'none';
-    });
-    
-    // Show this reply form with animation
-    const form = document.getElementById('reply-form-' + reviewId);
-    form.style.display = 'block';
-    form.style.animation = 'slideDown 0.3s ease-out';
-    
-    // Store receiver info for this reply
-    form.dataset.receiverId = receiverId;
-    form.dataset.reviewType = reviewType;
-}
-
-function hideReplyForm(reviewId) {
-    const form = document.getElementById('reply-form-' + reviewId);
-    form.style.animation = 'slideUp 0.3s ease-out';
-    setTimeout(() => {
-        form.style.display = 'none';
-        form.style.animation = '';
-    }, 300);
-}
-
-// Submit Reply (AJAX)
-function submitReply(event, reviewId, reviewType, receiverId) {
-    event.preventDefault();
-    
-    const replyText = document.getElementById('reply-text-' + reviewId).value;
-    
-    if (!replyText.trim()) {
-        alert('Please write a reply');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('review_id', reviewId);
-    formData.append('review_type', reviewType);
-    formData.append('receiver_id', receiverId);
-    formData.append('reply_text', replyText);
-    
-    fetch('submit_reply.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Add the new reply to the page without refreshing
-            const repliesSection = document.querySelector('#review-' + reviewId + ' .replies-section');
-            const newReply = document.createElement('div');
-            newReply.className = 'reply';
-            newReply.style.marginBottom = '10px';
-            newReply.style.padding = '10px';
-            newReply.style.background = '#f8f9fa';
-            newReply.style.borderRadius = '8px';
-            newReply.style.borderLeft = '3px solid #28a745';
-            newReply.style.animation = 'fadeIn 0.5s';
-            
-            newReply.innerHTML = `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="font-weight: bold; color: #28a745;">↪️ ${data.username}</span>
-                    <span style="color: #999; font-size: 12px;">Just now</span>
-                </div>
-                <p style="color: #555;">${escapeHtml(replyText)}</p>
-            `;
-            
-            repliesSection.appendChild(newReply);
-            hideReplyForm(reviewId);
-            document.getElementById('reply-text-' + reviewId).value = '';
-        } else {
-            alert('Error posting reply: ' + data.error);
-        }
-    })
-    .catch(error => {
-        alert('Error posting reply. Please try again.');
-    });
-}
-
-// Helper function to escape HTML
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Add slide animations
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    @keyframes slideUp {
-        from {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        to {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-`;
-document.head.appendChild(style);
-</script>
 </body>
 </html>
