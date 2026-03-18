@@ -129,12 +129,13 @@ function getCategoryIcon($category) {
 </head>
 <body>
     <div class="navbar">
-        <h1><a href="index.php">🎓 College Rating System</a></h1>
+        <h1><a href="index.php">🎓 UniScope</a></h1>
         <div class="user-menu">
             <span class="username">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
             <a href="logout.php" class="logout">Logout</a>
         </div>
     </div>
+    
     
     <div class="container">
         <a href="index.php" class="back-link">← Back to Home</a>
@@ -146,6 +147,7 @@ function getCategoryIcon($category) {
         <?php if(isset($error)): ?>
             <div class="error-message"><?php echo $error; ?></div>
         <?php endif; ?>
+        
         
         <div class="college-header">
             <h1 class="college-name"><?php echo htmlspecialchars($college['college_name']); ?></h1>
@@ -294,31 +296,42 @@ function getCategoryIcon($category) {
                 </div>
             <?php endif; ?>
             
-            <div style="margin-top: 30px;">
-                <?php if($reviews->num_rows > 0): ?>
-                    <?php while($review = $reviews->fetch_assoc()): ?>
-                        <div class="review">
-                            <div class="review-header">
-                                <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
-                                <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
-                            </div>
-                            <div class="review-rating">
-                                <?php 
-                                for($i = 1; $i <= 5; $i++) {
-                                    if($i <= $review['rating']) echo "★";
-                                    else echo "☆";
-                                }
-                                ?>
-                            </div>
-                            <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
-                        </div>
-                    <?php endwhile; ?>
-                <?php else: ?>
-                    <div class="empty-state">
-                        <p>No reviews yet. Be the first to review this college!</p>
-                    </div>
-                <?php endif; ?>
+          <div style="margin-top: 30px;">
+    <?php if($reviews->num_rows > 0): ?>
+        <?php while($review = $reviews->fetch_assoc()): ?>
+            <div class="review">
+                <div class="review-header">
+                    <span class="review-user"><?php echo htmlspecialchars($review['username']); ?></span>
+                    <span class="review-date"><?php echo date('M d, Y', strtotime($review['created_at'])); ?></span>
+                </div>
+                <div class="review-rating">
+                    <?php 
+                    for($i = 1; $i <= 5; $i++) {
+                        if($i <= $review['rating']) echo "★";
+                        else echo "☆";
+                    }
+                    ?>
+                </div>
+                <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
+                
+                <!-- ASK QUESTION BUTTON - ADD THIS RIGHT HERE -->
+                <div class="review-actions" style="margin-top: 10px;">
+                    <?php if($review['user_id'] != $_SESSION['user_id']): ?>
+                    <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
+                            class="ask-btn" 
+                            style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
+                        💬 Ask Question
+                    </button>
+                    <?php endif; ?>
+                </div>
             </div>
+        <?php endwhile; ?>
+    <?php else: ?>
+        <div class="empty-state">
+            <p>No reviews yet. Be the first to review this college!</p>
+        </div>
+    <?php endif; ?>
+</div>
         </div>
     </div>
 
@@ -362,5 +375,75 @@ function getCategoryIcon($category) {
         document.head.appendChild(style);
     });
     </script>
+    <!-- Message Modal -->
+<div id="messageModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background: white; max-width: 500px; margin: 100px auto; padding: 30px; border-radius: 10px; position: relative;">
+        <span onclick="closeMessageModal()" style="position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer;">&times;</span>
+        <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
+        
+        <form id="messageForm" onsubmit="sendMessage(event)">
+            <input type="hidden" id="receiverId" name="receiver_id">
+            <input type="hidden" id="reviewId" name="review_id">
+            <input type="hidden" id="reviewType" name="review_type">
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
+                <textarea id="messageText" name="message" rows="4" required 
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                          placeholder="Type your question here..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
+                <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openMessageModal(reviewId, reviewType, receiverId) {
+    document.getElementById('receiverId').value = receiverId;
+    document.getElementById('reviewId').value = reviewId;
+    document.getElementById('reviewType').value = reviewType;
+    document.getElementById('messageModal').style.display = 'block';
+}
+
+function closeMessageModal() {
+    document.getElementById('messageModal').style.display = 'none';
+    document.getElementById('messageForm').reset();
+}
+
+function sendMessage(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(document.getElementById('messageForm'));
+    
+    fetch('send_message.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Message sent successfully!');
+            closeMessageModal();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending message. Please try again.');
+    });
+}
+
+// Close modal if user clicks outside
+window.onclick = function(event) {
+    const modal = document.getElementById('messageModal');
+    if (event.target == modal) {
+        closeMessageModal();
+    }
+}
+</script>
 </body>
 </html>
