@@ -144,7 +144,7 @@ if (!empty($college['gallery_images'])) {
 <body>
     <div class="navbar">
         <h1><a href="index.php">
-            <img src="assets/images/logo.png" alt="UniScope" class="navbar-logo" style="height: 40px; width: auto;"> UniScope
+          UniScope
         </a></h1>
         <div class="user-menu">
             <span class="username">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</span>
