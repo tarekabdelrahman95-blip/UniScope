@@ -55,7 +55,7 @@ function getCollegeLogo($college_name) {
 </head>
 <body>
     <div class="navbar">
-        <h1><a href="index.php">🎓 College Rating System</a></h1>
+        <h1><a href="index.php">🎓 UniScope</a></h1>
         <div class="user-menu">
             <div class="nav-actions">
                 <a href="recommend.php" class="recommend-btn">
