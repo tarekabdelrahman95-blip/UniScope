@@ -332,6 +332,68 @@ function getCategoryIcon($category) {
         ↩️ Reply
     </button>
 </div>
+<!-- Reply Modal -->
+<div id="replyModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background: white; max-width: 500px; margin: 100px auto; padding: 30px; border-radius: 10px; position: relative;">
+        <span onclick="closeReplyModal()" style="position: absolute; right: 20px; top: 20px; font-size: 24px; cursor: pointer;">&times;</span>
+        <h3 style="margin-bottom: 20px; color: #28a745;">Reply to Comment</h3>
+        
+        <form id="replyForm" onsubmit="sendReply(event)">
+            <input type="hidden" id="replyReceiverId" name="receiver_id">
+            <input type="hidden" id="replyReviewId" name="review_id">
+            <input type="hidden" id="replyReviewType" name="review_type">
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Reply:</label>
+                <textarea id="replyText" name="message" rows="4" required 
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
+                          placeholder="Type your reply here..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn" style="background: #28a745; flex: 1;">Send Reply</button>
+                <button type="button" onclick="closeReplyModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openReplyModal(reviewId, reviewType, receiverId) {
+    document.getElementById('replyReceiverId').value = receiverId;
+    document.getElementById('replyReviewId').value = reviewId;
+    document.getElementById('replyReviewType').value = reviewType;
+    document.getElementById('replyModal').style.display = 'block';
+}
+
+function closeReplyModal() {
+    document.getElementById('replyModal').style.display = 'none';
+    document.getElementById('replyForm').reset();
+}
+
+function sendReply(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(document.getElementById('replyForm'));
+    
+    fetch('send_message.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            alert('Reply sent successfully!');
+            closeReplyModal();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error sending reply. Please try again.');
+    });
+}
+</script>
             </div>
         <?php endwhile; ?>
     <?php else: ?>
