@@ -243,7 +243,7 @@ if (!empty($college['gallery_images'])) {
         
         <!-- Majors Section (Programs like Commerce, BIS) -->
         <div class="section">
-            <h2 class="section-title">📚 Academic Programs</h2>
+            <h2 class="section-title">📚 colleges</h2>
             
             <?php if($majors->num_rows > 0): ?>
                 <div class="grid" id="majorsGrid">
