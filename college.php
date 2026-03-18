@@ -705,6 +705,125 @@ window.onclick = function(event) {
         closeReplyModal();
     }
 }
+// Show/Hide Reply Form
+function showReplyForm(reviewId, reviewType, receiverId) {
+    // Hide any other open reply forms
+    document.querySelectorAll('.reply-form').forEach(form => {
+        form.style.display = 'none';
+    });
+    
+    // Show this reply form with animation
+    const form = document.getElementById('reply-form-' + reviewId);
+    form.style.display = 'block';
+    form.style.animation = 'slideDown 0.3s ease-out';
+    
+    // Store receiver info for this reply
+    form.dataset.receiverId = receiverId;
+    form.dataset.reviewType = reviewType;
+}
+
+function hideReplyForm(reviewId) {
+    const form = document.getElementById('reply-form-' + reviewId);
+    form.style.animation = 'slideUp 0.3s ease-out';
+    setTimeout(() => {
+        form.style.display = 'none';
+        form.style.animation = '';
+    }, 300);
+}
+
+// Submit Reply (AJAX)
+function submitReply(event, reviewId, reviewType, receiverId) {
+    event.preventDefault();
+    
+    const replyText = document.getElementById('reply-text-' + reviewId).value;
+    
+    if (!replyText.trim()) {
+        alert('Please write a reply');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('review_id', reviewId);
+    formData.append('review_type', reviewType);
+    formData.append('receiver_id', receiverId);
+    formData.append('reply_text', replyText);
+    
+    fetch('submit_reply.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Add the new reply to the page without refreshing
+            const repliesSection = document.querySelector('#review-' + reviewId + ' .replies-section');
+            const newReply = document.createElement('div');
+            newReply.className = 'reply';
+            newReply.style.marginBottom = '10px';
+            newReply.style.padding = '10px';
+            newReply.style.background = '#f8f9fa';
+            newReply.style.borderRadius = '8px';
+            newReply.style.borderLeft = '3px solid #28a745';
+            newReply.style.animation = 'fadeIn 0.5s';
+            
+            newReply.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="font-weight: bold; color: #28a745;">↪️ ${data.username}</span>
+                    <span style="color: #999; font-size: 12px;">Just now</span>
+                </div>
+                <p style="color: #555;">${escapeHtml(replyText)}</p>
+            `;
+            
+            repliesSection.appendChild(newReply);
+            hideReplyForm(reviewId);
+            document.getElementById('reply-text-' + reviewId).value = '';
+        } else {
+            alert('Error posting reply: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error posting reply. Please try again.');
+    });
+}
+
+// Helper function to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Add slide animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>
