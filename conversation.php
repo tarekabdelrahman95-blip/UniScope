@@ -79,7 +79,124 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['message'])) {
     <meta charset="UTF-8">
     <title>Conversation with <?php echo htmlspecialchars($conv['other_user']); ?> - UniScope</title>
     
-  
+   <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .chat-header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-bottom: 2px solid #1a73e8;
+        }
+        
+        .chat-header h2 {
+            color: #333;
+        }
+        
+        .chat-header p {
+            color: #666;
+        }
+        
+        .messages-area {
+            background: #f8f9fa;
+            padding: 20px;
+            min-height: 400px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message.sent {
+            align-items: flex-end;
+        }
+        
+        .message.received {
+            align-items: flex-start;
+        }
+        
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            position: relative;
+        }
+        
+        .message.sent .message-bubble {
+            background: #1a73e8;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.received .message-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .message-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+            padding: 0 5px;
+        }
+        
+        .message.sent .message-info {
+            text-align: right;
+        }
+        
+        .chat-footer {
+            background: white;
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .message-form {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .message-form input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+        }
+        
+        .message-form input:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        
+        .message-form button {
+            padding: 12px 25px;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #1a73e8;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
     <div class="navbar">
