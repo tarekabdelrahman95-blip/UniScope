@@ -18,6 +18,7 @@ $receiver_id = $_POST['receiver_id'];
 $review_id = $_POST['review_id'];
 $review_type = $_POST['review_type'];
 $message_text = trim($_POST['message']);
+$parent_message_id = isset($_POST['parent_message_id']) ? $_POST['parent_message_id'] : null;
 
 // Validate inputs
 if (empty($message_text)) {
@@ -68,10 +69,17 @@ try {
         $part_stmt->execute();
     }
     
-    // Save message
-    $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text) VALUES (?, ?, ?)";
-    $msg_stmt = $conn->prepare($msg_sql);
-    $msg_stmt->bind_param("iis", $conversation_id, $sender_id, $message_text);
+    // Save message (with or without parent message ID)
+    if ($parent_message_id) {
+        $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text, parent_message_id, is_reply) 
+                    VALUES (?, ?, ?, ?, 1)";
+        $msg_stmt = $conn->prepare($msg_sql);
+        $msg_stmt->bind_param("iisi", $conversation_id, $sender_id, $message_text, $parent_message_id);
+    } else {
+        $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text) VALUES (?, ?, ?)";
+        $msg_stmt = $conn->prepare($msg_sql);
+        $msg_stmt->bind_param("iis", $conversation_id, $sender_id, $message_text);
+    }
     $msg_stmt->execute();
     
     // Link to review inquiry
@@ -86,19 +94,5 @@ try {
 } catch (Exception $e) {
     $conn->rollback();
     echo json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
-}
-// Check if this is a reply to a specific message
-$parent_message_id = isset($_POST['parent_message_id']) ? $_POST['parent_message_id'] : null;
-
-// In the INSERT section:
-if ($parent_message_id) {
-    $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text, parent_message_id, is_reply) 
-                VALUES (?, ?, ?, ?, TRUE)";
-    $msg_stmt = $conn->prepare($msg_sql);
-    $msg_stmt->bind_param("iisi", $conversation_id, $sender_id, $message_text, $parent_message_id);
-} else {
-    $msg_sql = "INSERT INTO messages (conversation_id, sender_id, message_text) VALUES (?, ?, ?)";
-    $msg_stmt = $conn->prepare($msg_sql);
-    $msg_stmt->bind_param("iis", $conversation_id, $sender_id, $message_text);
 }
 ?>
