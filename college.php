@@ -106,115 +106,6 @@ if (!empty($college['gallery_images'])) {
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($college['college_name']); ?> - UniScope</title>
     <link rel="stylesheet" href="assets/css/style.css">
-    <style>
-        .college-overview {
-            line-height: 1.8;
-            color: #555;
-            font-size: 16px;
-            margin-top: 20px;
-        }
-        
-        .upload-btn {
-            background: #28a745;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        
-        .upload-btn:hover {
-            background: #218838;
-        }
-        
-        .gallery-upload-form {
-            margin: 20px 0;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            animation: fadeIn 0.3s;
-        }
-
-        .modal-content {
-            background: white;
-            max-width: 500px;
-            margin: 100px auto;
-            padding: 30px;
-            border-radius: 10px;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .slide-up {
-            animation: slideUp 0.4s ease-out;
-        }
-
-        .close {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            font-size: 28px;
-            font-weight: bold;
-            color: #666;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .close:hover {
-            color: #333;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes slideUpForm {
-            from {
-                opacity: 1;
-                transform: translateY(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="navbar">
@@ -269,17 +160,6 @@ if (!empty($college['gallery_images'])) {
             <p class="college-overview">
                 <?php echo !empty($college['overview']) ? nl2br(htmlspecialchars($college['overview'])) : 'No overview available yet.'; ?>
             </p>
-            
-            <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin']): ?>
-            <div class="gallery-upload-form">
-                <h4>Update Overview</h4>
-                <form method="POST" action="update_college.php">
-                    <input type="hidden" name="college_id" value="<?php echo $college_id; ?>">
-                    <textarea name="overview" rows="4" style="width:100%; padding:10px;"><?php echo $college['overview']; ?></textarea>
-                    <button type="submit" class="upload-btn">Save Overview</button>
-                </form>
-            </div>
-            <?php endif; ?>
         </div>
         
         <!-- Gallery Section -->
@@ -297,17 +177,6 @@ if (!empty($college['gallery_images'])) {
             <?php else: ?>
             <p class="empty-state">No gallery images yet.</p>
             <?php endif; ?>
-            
-            <?php if(isset($_SESSION['is_admin']) && $_SESSION['is_admin']): ?>
-            <div class="gallery-upload-form">
-                <h4>Add Gallery Images</h4>
-                <form method="POST" action="upload_gallery.php" enctype="multipart/form-data">
-                    <input type="hidden" name="college_id" value="<?php echo $college_id; ?>">
-                    <input type="file" name="gallery_images[]" multiple accept="image/*" required>
-                    <button type="submit" class="upload-btn">Upload Images</button>
-                </form>
-            </div>
-            <?php endif; ?>
         </div>
         
         <!-- Majors Section -->
@@ -315,7 +184,7 @@ if (!empty($college['gallery_images'])) {
             <h2 class="section-title">📚 Academic Programs</h2>
             
             <?php if($majors->num_rows > 0): ?>
-                <div class="grid" id="majorsGrid">
+                <div class="grid">
                     <?php while($major = $majors->fetch_assoc()): ?>
                         <div class="major-card">
                             <h3 class="card-name">
@@ -437,44 +306,32 @@ if (!empty($college['gallery_images'])) {
                             </div>
                             <p class="review-text"><?php echo nl2br(htmlspecialchars($review['review'])); ?></p>
                             
-                            <div class="review-actions" style="margin-top: 10px; display: flex; gap: 10px;">
+                            <div class="review-actions">
                                 <?php if($review['user_id'] != $_SESSION['user_id']): ?>
-                                <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-                                        class="ask-btn" 
-                                        style="background: none; border: 1px solid #1a73e8; color: #1a73e8; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                    💬 Ask Question
-                                </button>
+                                <button onclick="openMessageModal(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" class="ask-btn">💬 Ask Question</button>
                                 <?php endif; ?>
-                                
-                                <button onclick="showReplyForm(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" 
-                                        class="reply-btn" 
-                                        style="background: none; border: 1px solid #28a745; color: #28a745; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px;">
-                                    ↩️ Reply
-                                </button>
+                                <button onclick="showReplyForm(<?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)" class="reply-btn">↩️ Reply</button>
                             </div>
                             
-                            <div id="reply-form-<?php echo $review['rating_id']; ?>" class="reply-form" style="display: none; margin-top: 15px; margin-left: 30px;">
+                            <div id="reply-form-<?php echo $review['rating_id']; ?>" class="reply-form" style="display: none;">
                                 <form onsubmit="submitReply(event, <?php echo $review['rating_id']; ?>, 'college', <?php echo $review['user_id']; ?>)">
-                                    <textarea id="reply-text-<?php echo $review['rating_id']; ?>" rows="2" 
-                                              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;"
-                                              placeholder="Write your reply..." required></textarea>
-                                    <div style="display: flex; gap: 10px;">
-                                        <button type="submit" class="btn" style="background: #28a745; padding: 8px 20px;">Post Reply</button>
-                                        <button type="button" onclick="hideReplyForm(<?php echo $review['rating_id']; ?>)" 
-                                                class="btn" style="background: #6c757d; padding: 8px 20px;">Cancel</button>
+                                    <textarea id="reply-text-<?php echo $review['rating_id']; ?>" rows="2" placeholder="Write your reply..." required></textarea>
+                                    <div>
+                                        <button type="submit">Post Reply</button>
+                                        <button type="button" onclick="hideReplyForm(<?php echo $review['rating_id']; ?>)">Cancel</button>
                                     </div>
                                 </form>
                             </div>
                             
-                            <div class="replies-section" style="margin-top: 15px; margin-left: 30px;">
+                            <div class="replies-section">
                                 <?php if($replies->num_rows > 0): ?>
                                     <?php while($reply = $replies->fetch_assoc()): ?>
-                                        <div class="reply" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #28a745;">
-                                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                                <span style="font-weight: bold; color: #28a745;">↪️ <?php echo htmlspecialchars($reply['username']); ?></span>
-                                                <span style="color: #999; font-size: 12px;"><?php echo date('M d, Y', strtotime($reply['created_at'])); ?></span>
+                                        <div class="reply">
+                                            <div>
+                                                <span>↪️ <?php echo htmlspecialchars($reply['username']); ?></span>
+                                                <span><?php echo date('M d, Y', strtotime($reply['created_at'])); ?></span>
                                             </div>
-                                            <p style="color: #555;"><?php echo nl2br(htmlspecialchars($reply['reply_text'])); ?></p>
+                                            <p><?php echo nl2br(htmlspecialchars($reply['reply_text'])); ?></p>
                                         </div>
                                     <?php endwhile; ?>
                                 <?php endif; ?>
@@ -490,34 +347,28 @@ if (!empty($college['gallery_images'])) {
         </div>
     </div>
 
-    <!-- Message Modal (Ask Question) - SLIDE UP ANIMATION -->
+    <!-- Message Modal -->
     <div id="messageModal" class="modal">
         <div class="modal-content slide-up">
             <span onclick="closeMessageModal()" class="close">&times;</span>
-            <h3 style="margin-bottom: 20px; color: #1a73e8;">Send Message</h3>
+            <h3>Send Message</h3>
             
             <form id="messageForm" onsubmit="sendMessage(event)">
                 <input type="hidden" id="receiverId" name="receiver_id">
                 <input type="hidden" id="reviewId" name="review_id">
                 <input type="hidden" id="reviewType" name="review_type">
                 
-                <div class="form-group">
-                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Your Message:</label>
-                    <textarea id="messageText" name="message" rows="4" required 
-                              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"
-                              placeholder="Type your question here..."></textarea>
-                </div>
+                <textarea id="messageText" name="message" rows="4" required placeholder="Type your question here..."></textarea>
                 
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn" style="background: #1a73e8; flex: 1;">Send Message</button>
-                    <button type="button" onclick="closeMessageModal()" class="btn" style="background: #6c757d; flex: 1;">Cancel</button>
+                <div>
+                    <button type="submit">Send Message</button>
+                    <button type="button" onclick="closeMessageModal()">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-    // Message Modal Functions
     function openMessageModal(reviewId, reviewType, receiverId) {
         document.getElementById('receiverId').value = receiverId;
         document.getElementById('reviewId').value = reviewId;
@@ -530,7 +381,6 @@ if (!empty($college['gallery_images'])) {
         document.getElementById('messageForm').reset();
     }
 
-    // Send Message Function
     function sendMessage(event) {
         event.preventDefault();
         
@@ -554,7 +404,6 @@ if (!empty($college['gallery_images'])) {
         });
     }
 
-    // Reply Form Functions
     function showReplyForm(reviewId, reviewType, receiverId) {
         document.querySelectorAll('.reply-form').forEach(form => {
             form.style.display = 'none';
@@ -562,18 +411,13 @@ if (!empty($college['gallery_images'])) {
         
         const form = document.getElementById('reply-form-' + reviewId);
         form.style.display = 'block';
-        form.style.animation = 'slideDown 0.3s ease-out';
         form.dataset.receiverId = receiverId;
         form.dataset.reviewType = reviewType;
     }
 
     function hideReplyForm(reviewId) {
         const form = document.getElementById('reply-form-' + reviewId);
-        form.style.animation = 'slideUpForm 0.3s ease-out';
-        setTimeout(() => {
-            form.style.display = 'none';
-            form.style.animation = '';
-        }, 300);
+        form.style.display = 'none';
     }
 
     function submitReply(event, reviewId, reviewType, receiverId) {
@@ -602,21 +446,13 @@ if (!empty($college['gallery_images'])) {
                 const repliesSection = document.querySelector('#review-' + reviewId + ' .replies-section');
                 const newReply = document.createElement('div');
                 newReply.className = 'reply';
-                newReply.style.marginBottom = '10px';
-                newReply.style.padding = '10px';
-                newReply.style.background = '#f8f9fa';
-                newReply.style.borderRadius = '8px';
-                newReply.style.borderLeft = '3px solid #28a745';
-                newReply.style.animation = 'fadeIn 0.5s';
-                
                 newReply.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-weight: bold; color: #28a745;">↪️ ${escapeHtml(data.username)}</span>
-                        <span style="color: #999; font-size: 12px;">Just now</span>
+                    <div>
+                        <span>↪️ ${escapeHtml(data.username)}</span>
+                        <span>Just now</span>
                     </div>
-                    <p style="color: #555;">${escapeHtml(replyText)}</p>
+                    <p>${escapeHtml(replyText)}</p>
                 `;
-                
                 repliesSection.appendChild(newReply);
                 hideReplyForm(reviewId);
                 document.getElementById('reply-text-' + reviewId).value = '';
@@ -635,7 +471,6 @@ if (!empty($college['gallery_images'])) {
         return div.innerHTML;
     }
 
-    // Close modal when clicking outside
     window.onclick = function(event) {
         const modal = document.getElementById('messageModal');
         if (event.target == modal) {
