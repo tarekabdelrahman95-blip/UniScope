@@ -33,11 +33,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html>
+<!DOCTYPE html>
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Login - College Rating System</title>
-    <link rel="stylesheet" href="assets/css/style.css?v=2">
+    <title>Login - UniScope</title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
+<body>
+    <!-- Your login form here -->
+</body>
+</html>
 <body>
     <div class="auth-container">
         <div class="auth-box">
