@@ -48,7 +48,7 @@ $msg_sql = "SELECT m.*, u.username
 $msg_stmt = $conn->prepare($msg_sql);
 $msg_stmt->bind_param("i", $conversation_id);
 $msg_stmt->execute();
-$messages = $msg_stmt->get_result();
+$messages_result = $msg_stmt->get_result();
 
 // Mark messages as read
 $update_sql = "UPDATE messages SET is_read = TRUE, read_at = NOW() 
@@ -71,52 +71,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['message'])) {
         exit();
     }
 }
-// First, get all messages
-$messages = $msg_stmt->get_result();
 
 // Separate parent messages and replies
 $parent_messages = [];
 $replies = [];
 
-while($msg = $messages->fetch_assoc()) {
+while($msg = $messages_result->fetch_assoc()) {
     if ($msg['parent_message_id']) {
         $replies[$msg['parent_message_id']][] = $msg;
     } else {
         $parent_messages[] = $msg;
     }
 }
-
-// Display parent messages with their replies
-foreach($parent_messages as $parent) {
-    // Display parent message
-    echo '<div class="message ' . ($parent['sender_id'] == $user_id ? 'sent' : 'received') . '">';
-    echo '<div class="message-bubble">' . htmlspecialchars($parent['message_text']) . '</div>';
-    echo '<div class="message-info">' . date('M d, H:i', strtotime($parent['created_at']));
-    
-    // Add Reply button
-    echo ' <button onclick="openReplyToMessage(' . $parent['message_id'] . ')" 
-                 style="background:none; border:none; color:#28a745; cursor:pointer; margin-left:10px;">
-                 ↩️ Reply</button>';
-    echo '</div>';
-    echo '</div>';
-    
-    // Display replies to this message
-    if (isset($replies[$parent['message_id']])) {
-        foreach($replies[$parent['message_id']] as $reply) {
-            echo '<div class="message ' . ($reply['sender_id'] == $user_id ? 'sent' : 'received') . '" 
-                       style="margin-left: 30px; border-left: 2px solid #ddd; padding-left: 10px;">';
-            echo '<div class="message-bubble" style="background: #f0f2f5; color: #333;">↪️ ' . 
-                 htmlspecialchars($reply['message_text']) . '</div>';
-            echo '<div class="message-info">' . date('M d, H:i', strtotime($reply['created_at'])) . '</div>';
-            echo '</div>';
-        }
-    }
-}
 ?>
 
 <!DOCTYPE html>
 <html>
-     <style>
+<head>
+    <meta charset="UTF-8">
+    <title>Conversation with <?php echo htmlspecialchars($conv['other_user']); ?> - UniScope</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <style>
         .chat-container {
             max-width: 800px;
             margin: 30px auto;
@@ -193,6 +168,30 @@ foreach($parent_messages as $parent) {
             text-align: right;
         }
         
+        .reply-message {
+            margin-left: 30px;
+            border-left: 2px solid #ddd;
+            padding-left: 10px;
+        }
+        
+        .reply-message .message-bubble {
+            background: #f0f2f5;
+            color: #333;
+        }
+        
+        .reply-btn-small {
+            background: none;
+            border: none;
+            color: #28a745;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+        
+        .reply-btn-small:hover {
+            text-decoration: underline;
+        }
+        
         .chat-footer {
             background: white;
             padding: 20px;
@@ -233,12 +232,35 @@ foreach($parent_messages as $parent) {
             color: #1a73e8;
             text-decoration: none;
         }
+        
+        .navbar {
+            background: #e3f2fd;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .navbar h1 a {
+            color: #1565c0;
+            text-decoration: none;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logout {
+            background: #dc3545;
+            padding: 8px 15px;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+        }
     </style>
-<head>
-    <meta charset="UTF-8">
-    <title>Conversation with <?php echo htmlspecialchars($conv['other_user']); ?> - UniScope</title>
-    
-  
 </head>
 <body>
     <div class="navbar">
@@ -258,17 +280,34 @@ foreach($parent_messages as $parent) {
         </div>
         
         <div class="messages-area" id="messagesArea">
-            <?php if($messages->num_rows > 0): ?>
-                <?php while($msg = $messages->fetch_assoc()): ?>
-                    <div class="message <?php echo $msg['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
+            <?php if(count($parent_messages) > 0): ?>
+                <?php foreach($parent_messages as $parent): ?>
+                    <div class="message <?php echo $parent['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
                         <div class="message-bubble">
-                            <?php echo htmlspecialchars($msg['message_text']); ?>
+                            <?php echo htmlspecialchars($parent['message_text']); ?>
                         </div>
                         <div class="message-info">
-                            <?php echo date('M d, H:i', strtotime($msg['created_at'])); ?>
+                            <?php echo date('M d, H:i', strtotime($parent['created_at'])); ?>
+                            <button onclick="openReplyToMessage(<?php echo $parent['message_id']; ?>)" 
+                                    class="reply-btn-small">
+                                ↩️ Reply
+                            </button>
                         </div>
                     </div>
-                <?php endwhile; ?>
+                    
+                    <?php if(isset($replies[$parent['message_id']])): ?>
+                        <?php foreach($replies[$parent['message_id']] as $reply): ?>
+                            <div class="message reply-message <?php echo $reply['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
+                                <div class="message-bubble">
+                                    ↪️ <?php echo htmlspecialchars($reply['message_text']); ?>
+                                </div>
+                                <div class="message-info">
+                                    <?php echo date('M d, H:i', strtotime($reply['created_at'])); ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <div style="text-align: center; color: #666; padding: 50px;">
                     No messages yet. Start the conversation!
@@ -288,6 +327,11 @@ foreach($parent_messages as $parent) {
         // Auto-scroll to bottom
         const messagesArea = document.getElementById('messagesArea');
         messagesArea.scrollTop = messagesArea.scrollHeight;
+        
+        function openReplyToMessage(messageId) {
+            // This function can be expanded to handle replies
+            alert('Reply feature coming soon! You can reply by sending a new message referencing the previous one.');
+        }
     </script>
 </body>
 </html>
